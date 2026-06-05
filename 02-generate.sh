@@ -19,7 +19,11 @@ if [ -z "$JAR" ]; then
 fi
 
 mkdir -p "$DATA_DIR"
-MBTILES="$DATA_DIR/shortbread.mbtiles"
+# Intermediate tiles are written as PMTiles rather than MBTiles: PMTiles is a flat,
+# sequentially-laid-out file, so the `versatiles convert` read below avoids the random-access
+# SQLite B-tree overhead that makes reading MBTiles slow (planetiler picks the format from the
+# file extension). To override the location — e.g. a ramdisk for small test areas — set TILES.
+TILES="${TILES:-$DATA_DIR/shortbread.pmtiles}"
 CONTAINER="$DATA_DIR/shortbread.versatiles"
 
 echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES)"
@@ -31,12 +35,12 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --download \
   --force \
   --name_languages="$LANGUAGES" \
-  --output="$MBTILES" \
+  --output="$TILES" \
   $PLANETILER_EXTRA_FLAGS
 
 echo ">>> Converting to a VersaTiles container"
-versatiles convert "$MBTILES" "$CONTAINER"
+versatiles convert -c brotli "$TILES" "$CONTAINER"
 
 echo ">>> Done:"
-ls -lh "$MBTILES" "$CONTAINER"
+ls -lh "$TILES" "$CONTAINER"
 echo ">>> Next: ./03-serve.sh"
