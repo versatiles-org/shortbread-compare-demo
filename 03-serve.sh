@@ -26,8 +26,8 @@ echo "    downloading $asset_url"
 curl -fsSL "$asset_url" -o "$WORKDIR/frontend.tar.gz"
 
 echo ">>> Starting versatiles server on http://0.0.0.0:$PORT"
-echo "    left half  = current OSM Shortbread tiles from tiles.versatiles.org"
-echo "    right half = locally generated planetiler Shortbread 1.1 tiles"
+echo "    left half  = Shortbread via tilemaker (tiles.versatiles.org)"
+echo "    right half = Shortbread via native planetiler integration (local)"
 exec versatiles serve \
   --port "$PORT" \
   --static "frontend/" \
