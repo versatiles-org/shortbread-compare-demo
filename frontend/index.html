@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>Shortbread comparison — OSM vs. planetiler 1.1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet" />
-  <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
+  <link href="https://tiles.versatiles.org/assets/lib/maplibre-gl/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://tiles.versatiles.org/assets/lib/maplibre-gl/maplibre-gl.js"></script>
   <style>
     html, body { margin: 0; height: 100%; }
     #compare { position: absolute; inset: 0; overflow: hidden; }
@@ -45,10 +45,8 @@
     // The "colorful" VersaTiles style (built for the Shortbread schema). The left map uses it
     // as-is (pointing at tiles.versatiles.org); the right map reuses it but with the source
     // rewritten to the locally served tiles.
-    const STYLE_URL = 'https://tiles.versatiles.org/assets/styles/colorful.json';
-    // Local tile URL — __SOURCE_ID__ is substituted by 03-serve.sh. Verify the path matches
-    // your versatiles server (open /tiles/ to see the mounted sources).
-    const LOCAL_TILES_URL = location.origin + '/tiles/__SOURCE_ID__/{z}/{x}/{y}';
+    const STYLE_URL = 'https://tiles.versatiles.org/assets/styles/colorful/style.json';
+    const LOCAL_TILES_URL = location.origin + '/tiles/shortbread/{z}/{x}/{y}';
     const START = { center: [9.0, 48.5], zoom: 4 };
     // ---------------------------------------------------------------------------------------
 

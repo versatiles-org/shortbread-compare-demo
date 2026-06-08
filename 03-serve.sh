@@ -30,5 +30,6 @@ echo "    left half  = current OSM Shortbread tiles from tiles.versatiles.org"
 echo "    right half = locally generated planetiler Shortbread 1.1 tiles"
 exec versatiles serve \
   --port "$PORT" \
+  --static "frontend/" \
   --static "$WORKDIR/frontend.tar.gz" \
   "[${SOURCE_ID}]${CONTAINER}"
