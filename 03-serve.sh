@@ -14,7 +14,6 @@ if [ ! -f "$CONTAINER" ]; then
 fi
 
 echo ">>> Preparing the static frontend"
-mkdir -p "$FRONTEND_DIR"
 # download the standard (uncompressed) frontend.tar.gz from the latest versatiles-frontend release
 asset_url="$(curl -fsSL https://api.github.com/repos/versatiles-org/versatiles-frontend/releases/latest \
   | jq -r '.assets[].browser_download_url | select(test("/frontend\\.tar.gz$"))' | head -1)"
@@ -32,4 +31,4 @@ echo "    right half = locally generated planetiler Shortbread 1.1 tiles"
 exec versatiles serve \
   --port "$PORT" \
   --static "$WORKDIR/frontend.tar.gz" \
-  "${SOURCE_ID}:${CONTAINER}"
+  "[${SOURCE_ID}]${CONTAINER}"
