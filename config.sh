@@ -27,3 +27,12 @@ export PLANETILER_EXTRA_FLAGS="${PLANETILER_EXTRA_FLAGS:---nodemap_type=array --
 export PORT="${PORT:-8080}"
 # Name the local tile source is mounted under (URL becomes /tiles/$SOURCE_ID/...).
 export SOURCE_ID="${SOURCE_ID:-shortbread}"
+
+# --- low-zoom land cover (issue #1, option A) ---
+# ESA WorldCover land cover, merged into the generated Shortbread container by 02-generate.sh
+# (VPL from_merged_vector) so the right map isn't blank at low zoom where OSM has no land
+# detail yet. It's read straight from this remote VersaTiles container (no local download)
+# and surfaces as a `landcover-vectors` layer the frontend styles, faded out as OSM `land`
+# takes over. Set LANDCOVER_URL="" to skip the merge (plain Shortbread container).
+# (no colon, so an explicit LANDCOVER_URL="" disables the merge rather than re-defaulting)
+export LANDCOVER_URL="${LANDCOVER_URL-https://download.versatiles.org/landcover-vectors.versatiles}"

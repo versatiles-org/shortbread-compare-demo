@@ -30,9 +30,11 @@ else
   curl -fsSL "$asset_url" -o "$FRONTEND_TAR"
 fi
 
+# The local container already includes the ESA WorldCover land cover (merged in by
+# 02-generate.sh via VPL from_merged_vector), so a single source serves the right map.
 echo ">>> Starting versatiles server on http://0.0.0.0:$PORT"
 echo "    left half  = Shortbread via tilemaker (tiles.versatiles.org)"
-echo "    right half = Shortbread via native planetiler integration (local)"
+echo "    right half = Shortbread via native planetiler integration + ESA WorldCover (local)"
 exec versatiles serve \
   --port "$PORT" \
   --static "frontend/" \

@@ -29,7 +29,7 @@
     <div id="before"></div>
     <div id="after"></div>
     <div class="badge" id="badge-left">Shortbread &middot; tilemaker (tiles.versatiles.org)</div>
-    <div class="badge" id="badge-right">Shortbread &middot; native planetiler integration</div>
+    <div class="badge" id="badge-right">Shortbread &middot; native planetiler integration &plus; ESA WorldCover land cover</div>
   </div>
 
   <script>
@@ -40,10 +40,26 @@
     const STYLE_URL = 'https://tiles.versatiles.org/assets/styles/colorful/style.json';
     const LOCAL_TILES_URL = location.origin + '/tiles/shortbread/{z}/{x}/{y}';
     const START = { center: [9.0, 48.5], zoom: 4 };
+
+    // Low-zoom land cover (issue #1, option A): 02-generate.sh merges the ESA WorldCover
+    // `landcover-vectors` layer into the local Shortbread container (VPL from_merged_vector),
+    // so it rides along on the same local source as a normal source-layer. We add a fill
+    // layer for it to the right map only, so the comparison reads as "OSM only" (left) vs.
+    // "OSM + land cover" (right). The land cover data is native up to z8; the fill fades out
+    // by then as the OSM `land` layers begin to take over.
+    const LANDCOVER_SOURCE_LAYER = 'landcover-vectors';
+    // Official ESA WorldCover legend colours, keyed by the source's `kind` values.
+    const LANDCOVER_COLORS = [
+      'treecover', '#006400', 'shrubland', '#ffbb22', 'grassland', '#ffff4c',
+      'cropland', '#f096ff', 'builtup', '#fa0000', 'bare', '#b4b4b4',
+      'snow', '#f0f0f0', 'water', '#0064c8', 'wetland', '#0096a0',
+      'mangroves', '#00cf75', 'moss', '#fae6a0',
+    ];
     // ---------------------------------------------------------------------------------------
 
     async function buildLocalStyle() {
       const style = await (await fetch(STYLE_URL)).json();
+      let localSource = null;
       for (const key of Object.keys(style.sources || {})) {
         const src = style.sources[key];
         if (src.type === 'vector') {
@@ -51,9 +67,33 @@
           src.tiles = [LOCAL_TILES_URL];  // ...and point at the local source instead
           src.minzoom = src.minzoom ?? 0;
           src.maxzoom = 14;
+          localSource = localSource ?? key;
         }
       }
+      addLandcover(style, localSource);
       return style;
+    }
+
+    // Add a single fill layer for the merged-in `landcover-vectors` layer, just above the
+    // background so it fills the otherwise-blank land at low zoom while every OSM layer still
+    // draws on top. The data is native up to z8, so the fill fades out by then (the OSM `land`
+    // layers fade in around the same zooms); leaving it on past z8 would just pop off at z9
+    // where the source has no more land-cover features.
+    function addLandcover(style, sourceKey) {
+      if (!sourceKey) return;
+      const layer = {
+        id: 'landcover',
+        type: 'fill',
+        source: sourceKey,
+        'source-layer': LANDCOVER_SOURCE_LAYER,
+        paint: {
+          'fill-color': ['match', ['get', 'kind'], ...LANDCOVER_COLORS, '#cccccc'],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 5, 1, 8, 0],
+          'fill-antialias': false,
+        },
+      };
+      // Insert right after the `background` layer (index 0) so it sits below everything else.
+      style.layers.splice(1, 0, layer);
     }
 
     (async function () {

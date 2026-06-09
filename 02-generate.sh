@@ -38,8 +38,22 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --output="$TILES" \
   $PLANETILER_EXTRA_FLAGS
 
-echo ">>> Converting to a VersaTiles container"
-versatiles convert -c brotli "$TILES" "$CONTAINER"
+# Convert to a brotli VersaTiles container. When LANDCOVER_URL is set (issue #1, option A),
+# merge the ESA WorldCover land cover into the same Shortbread output with the VPL
+# `from_merged_vector` operation: each output tile then carries all the Shortbread layers
+# *plus* the source's `landcover-vectors` layer (Shortbread schema is preserved). The land
+# cover container is read straight from its remote URL via `from_container`, so nothing is
+# downloaded locally — versatiles range-reads it on demand. Set LANDCOVER_URL="" to skip it.
+if [ -n "${LANDCOVER_URL:-}" ]; then
+  echo ">>> Merging Shortbread tiles + ESA WorldCover land cover into a brotli container (VPL from_merged_vector)"
+  echo "    land cover source: $LANDCOVER_URL"
+  versatiles convert -c brotli \
+    "[,vpl](from_merged_vector [ from_container filename=\"$TILES\", from_container filename=\"$LANDCOVER_URL\" ])" \
+    "$CONTAINER"
+else
+  echo ">>> Converting to a brotli VersaTiles container"
+  versatiles convert -c brotli "$TILES" "$CONTAINER"
+fi
 
 echo ">>> Done:"
 ls -lh "$TILES" "$CONTAINER"
