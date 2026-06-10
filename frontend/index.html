@@ -48,12 +48,15 @@
     // "OSM + land cover" (right). The land cover data is native up to z8; the fill fades out
     // by then as the OSM `land` layers begin to take over.
     const LANDCOVER_SOURCE_LAYER = 'landcover-vectors';
-    // Official ESA WorldCover legend colours, keyed by the source's `kind` values.
+    // Colours taken from the VersaTiles "colorful" style itself (src/styles/colorful.ts),
+    // keyed by the source's `kind` values so the low-zoom land cover matches the OSM `land`
+    // layers it fades into. Each `kind` reuses the style colour for its closest `land-*` layer:
+    //   forest→wood, scrub→park/vegetation, grass→grass, farmland→agriculture,
+    //   urban→residential, bare→rock, glacier→glacier, water→water, wetland→wetland.
     const LANDCOVER_COLORS = [
-      'treecover', '#006400', 'shrubland', '#ffbb22', 'grassland', '#ffff4c',
-      'cropland', '#f096ff', 'builtup', '#fa0000', 'bare', '#b4b4b4',
-      'snow', '#f0f0f0', 'water', '#0064c8', 'wetland', '#0096a0',
-      'mangroves', '#00cf75', 'moss', '#fae6a0',
+      'forest', '#66AA44', 'scrub', '#D9D9A5', 'grass', '#D8E8C8',
+      'farmland', '#F0E7D1', 'urban', '#EAE6E133', 'bare', '#E0E4E5',
+      'glacier', '#FFFFFF', 'water', '#BEDDF3', 'wetland', '#D3E6DB',
     ];
     // ---------------------------------------------------------------------------------------
 
