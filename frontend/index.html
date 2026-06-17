@@ -60,12 +60,12 @@
     // two maps still match where OSM takes over. Layers with no opacity ramp (land-sand,
     // land-wetland, land-glacier) already show at low zoom and need no fix.
     const LANDCOVER_OPACITY_FIXES = {
-      'land-forest':      1, // forest z0-6 visible, then style's subtle 0.1
-      'land-agriculture': 1, // farmland z0-9
-      'land-residential': 1, // residential z0-9 (fill-color already 0.2 alpha)
-      'land-vegetation':  1, // scrub z0-10
-      'land-grass':       1, // grassland z0-10
-      'water-area':       1, // water z0-3
+      'land-forest':      0.1, // forest z0-6 visible, then style's subtle 0.1
+      'land-agriculture': 1.0, // farmland z0-9
+      'land-residential': 1.0, // residential z0-9 (fill-color already 0.2 alpha)
+      'land-vegetation':  1.0, // scrub z0-10
+      'land-grass':       1.0, // grassland z0-10
+      'water-area':       1.0, // water z0-3
     };
     // ---------------------------------------------------------------------------------------
 
