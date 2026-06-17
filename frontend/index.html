@@ -47,11 +47,26 @@
     // its own source-layer with custom `kind` values — it is written straight into
     // Shortbread's *own* `land` and `water_polygons` layers using standard Shortbread `kind`
     // values (forest, farmland, residential, sand, scrub, grassland, marsh, swamp, glacier,
-    // water), at the low zooms where OSM has no land yet. So a stock Shortbread style draws it
-    // automatically: the colorful style's land-*/water-* layers carry no minzoom and already
-    // have rules for every one of those kinds. No custom style layer and no colour table are
-    // needed any more — the only difference between the two maps is the merged-in source, so
-    // the comparison still reads as "OSM only" (left) vs. "OSM + land cover" (right).
+    // water), at the low zooms where OSM has no land yet. So no custom style layer or colour
+    // table is needed: the colorful style's existing land-*/water-* layers already match every
+    // one of those kinds. The only difference between the two maps is the merged-in source, so
+    // the comparison reads as "OSM only" (left) vs. "OSM + land cover" (right).
+    //
+    // BUT the colorful style ramps several of those layers' `fill-opacity` to 0 at low zoom
+    // (see versatiles-style/src/styles/colorful.ts) — they're tuned for sparse high-zoom OSM
+    // data, so the merged-in land cover would be invisible exactly where it exists. For the
+    // right (local) map we override `fill-opacity` on just those layers, holding them visible
+    // across the zooms each kind covers and meeting the style's original high-zoom value so the
+    // two maps still match where OSM takes over. Layers with no opacity ramp (land-sand,
+    // land-wetland, land-glacier) already show at low zoom and need no fix.
+    const LANDCOVER_OPACITY_FIXES = {
+      'land-forest':      1, // forest z0-6 visible, then style's subtle 0.1
+      'land-agriculture': 1, // farmland z0-9
+      'land-residential': 1, // residential z0-9 (fill-color already 0.2 alpha)
+      'land-vegetation':  1, // scrub z0-10
+      'land-grass':       1, // grassland z0-10
+      'water-area':       1, // water z0-3
+    };
     // ---------------------------------------------------------------------------------------
 
     async function buildLocalStyle() {
@@ -63,6 +78,12 @@
           src.tiles = [LOCAL_TILES_URL];  // ...and point at the local source instead
           src.minzoom = src.minzoom ?? 0;
           src.maxzoom = 14;
+        }
+      }
+      // Make the merged-in land cover visible at low zoom (see note above).
+      for (const layer of style.layers || []) {
+        if (layer.id in LANDCOVER_OPACITY_FIXES) {
+          (layer.paint ??= {})['fill-opacity'] = LANDCOVER_OPACITY_FIXES[layer.id];
         }
       }
       return style;
