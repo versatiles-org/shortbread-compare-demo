@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 #
-# 02-generate.sh — generate Shortbread 1.1 vector tiles with planetiler and convert the
-# result into a VersaTiles container.
+# 02-generate.sh — generate Shortbread 1.1 vector tiles with planetiler.
+#
+# This step only runs planetiler and writes the raw PMTiles. The land-cover merge and the
+# final brotli VersaTiles container are produced separately by 04-merge.sh, so a slow planet
+# build isn't repeated every time you re-merge or re-tune the land cover.
 #
 # Resource note for AREA=planet: planetiler downloads the full planet OSM extract (~80 GB)
 # plus the ocean water-polygons shapefile, and needs a large machine — budget roughly
@@ -19,12 +22,11 @@ if [ -z "$JAR" ]; then
 fi
 
 mkdir -p "$DATA_DIR"
-# Intermediate tiles are written as PMTiles rather than MBTiles: PMTiles is a flat,
-# sequentially-laid-out file, so the `versatiles convert` read below avoids the random-access
-# SQLite B-tree overhead that makes reading MBTiles slow (planetiler picks the format from the
-# file extension). To override the location — e.g. a ramdisk for small test areas — set TILES.
+# Tiles are written as PMTiles rather than MBTiles: PMTiles is a flat, sequentially-laid-out
+# file, so the `versatiles convert` read in 04-merge.sh avoids the random-access SQLite B-tree
+# overhead that makes reading MBTiles slow (planetiler picks the format from the file
+# extension). To override the location — e.g. a ramdisk for small test areas — set TILES.
 TILES="${TILES:-$DATA_DIR/shortbread.pmtiles}"
-CONTAINER="$DATA_DIR/shortbread.versatiles"
 
 echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES)"
 # Run from WORKDIR so planetiler caches downloads under $WORKDIR/data/sources.
@@ -38,25 +40,6 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --output="$TILES" \
   $PLANETILER_EXTRA_FLAGS
 
-# Convert to a brotli VersaTiles container. When LANDCOVER_URL is set (issue #1), merge the
-# ESA WorldCover land cover into the same Shortbread output with the VPL `from_merged_vector`
-# operation. from_merged_vector combines features per layer name: with a landcover-vectors v2
-# container its `land`/`water_polygons` features (standard Shortbread `kind` values) fold into
-# the Shortbread `land`/`water_polygons` layers, so each output tile gains low-zoom land cover
-# within the existing Shortbread schema — a stock style draws it, no extra layer needed. The
-# land cover container is read straight from its remote URL via `from_container`, so nothing is
-# downloaded locally — versatiles range-reads it on demand. Set LANDCOVER_URL="" to skip it.
-if [ -n "${LANDCOVER_URL:-}" ]; then
-  echo ">>> Merging Shortbread tiles + ESA WorldCover land cover into a brotli container (VPL from_merged_vector)"
-  echo "    land cover source: $LANDCOVER_URL"
-  versatiles convert -c brotli \
-    "[,vpl](from_merged_vector [ from_container filename=\"$TILES\", from_container filename=\"$LANDCOVER_URL\" ])" \
-    "$CONTAINER"
-else
-  echo ">>> Converting to a brotli VersaTiles container"
-  versatiles convert -c brotli "$TILES" "$CONTAINER"
-fi
-
 echo ">>> Done:"
-ls -lh "$TILES" "$CONTAINER"
-echo ">>> Next: ./03-serve.sh"
+ls -lh "$TILES"
+echo ">>> Next: ./03-preview.sh (quick realtime-merged preview) or ./04-merge.sh (build the final container)"

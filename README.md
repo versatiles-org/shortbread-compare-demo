@@ -12,20 +12,25 @@ profile for a clean upstream PR).
 
 ## Usage
 
-Run on a Debian host (12/13). The three steps are independent and re-runnable:
+Run on a Debian host (12/13). The steps are independent and re-runnable:
 
 ```bash
 ./01-setup.sh      # install Java 21 + git + versatiles, clone the branch, build the jar
-./02-generate.sh   # generate Shortbread 1.1 tiles + convert to a .versatiles container
-./03-serve.sh      # serve the comparison map on http://<host>:8080
+./02-generate.sh   # generate Shortbread 1.1 tiles with planetiler -> shortbread.pmtiles
+./03-preview.sh    # OPTIONAL: preview remote Shortbread + land cover, merged in realtime (SFTP)
+./04-merge.sh      # merge in the land cover + pack the final brotli .versatiles container
+./05-serve.sh      # serve the comparison map on http://<host>:8080
 ```
 
-Configuration lives in `config.sh`; override anything via the environment, e.g.:
+`02-generate.sh` is split from the merge so the slow planet build isn't repeated when you
+re-merge or re-tune the land cover. `03-preview.sh` is an optional shortcut: it serves an
+inline VPL pipeline that feature-merges the *remote* Shortbread and land-cover containers over
+SFTP on the fly, so you can eyeball the result before building the local container with
+`04-merge.sh`. Configuration lives in `config.sh`; override anything via the environment, e.g.:
 
 ```bash
 AREA=monaco ./02-generate.sh                 # quick smoke test instead of the planet
-LANGUAGES=en,de PORT=9000 ./03-serve.sh
-```
+LANGUAGES=en,de PORT=9000 ./05-serve.sh
 
 Languages default to `en,fr,es,de,ar,el,it,nl,pl,pt,uk` (the requested set), emitted as
 `name_en`, `name_fr`, … from the OSM `name:<code>` tags.
@@ -48,7 +53,7 @@ it, the right map adds the ESA WorldCover land cover from
 [`landcover-vectors`](https://github.com/versatiles-org/landcover-vectors) — this repo implements
 **option A** of the issue (no planetiler change).
 
-`02-generate.sh` **merges** the land cover into the generated Shortbread container with the
+`04-merge.sh` **merges** the land cover into the generated Shortbread container with the
 [VPL](https://github.com/versatiles-org/versatiles-rs) `from_merged_vector` operation, writing one
 brotli container:
 
@@ -103,7 +108,8 @@ step fails:
 - **colorful style URL** — `frontend/index.html` fetches
   `https://tiles.versatiles.org/assets/styles/colorful.json`. The same file ships inside
   `frontend.tar`, so you can switch to a local path if you prefer.
-- **release asset names** — `01-setup.sh` (versatiles CLI) and `03-serve.sh` (`frontend.tar`)
+- **release asset names** — `01-setup.sh` (versatiles CLI) and the `prepare_frontend` helper in
+  `config.sh` used by `03-preview.sh`/`05-serve.sh` (`frontend.tar`)
   resolve download URLs via the GitHub releases API, so they survive asset renames; if a release
   only ships `frontend.br.tar`, extract that instead and serve the `.br` files.
 - **`shortbread-1.1` task** — provided by the feature branch; it sets `--shortbread_version=1.1`
