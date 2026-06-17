@@ -28,11 +28,21 @@ export PORT="${PORT:-8080}"
 # Name the local tile source is mounted under (URL becomes /tiles/$SOURCE_ID/...).
 export SOURCE_ID="${SOURCE_ID:-shortbread}"
 
-# --- low-zoom land cover (issue #1, option A) ---
-# ESA WorldCover land cover, merged into the generated Shortbread container by 02-generate.sh
-# (VPL from_merged_vector) so the right map isn't blank at low zoom where OSM has no land
-# detail yet. It's read straight from this remote VersaTiles container (no local download)
-# and surfaces as a `landcover-vectors` layer the frontend styles, faded out as OSM `land`
-# takes over. Set LANDCOVER_URL="" to skip the merge (plain Shortbread container).
+# --- low-zoom land cover (issue #1) ---
+# ESA WorldCover land cover (versatiles-org/landcover-vectors), feature-merged into the
+# generated Shortbread container by 02-generate.sh (VPL from_merged_vector) so the right map
+# isn't blank at low zoom where OSM has no land detail yet. It's read straight from this
+# remote VersaTiles container (no local download).
+#
+# As of landcover-vectors v2 the container no longer has its own `landcover-vectors` layer:
+# its features are written into Shortbread's *own* `land` and `water_polygons` layers using
+# standard Shortbread `kind` values, so from_merged_vector folds them straight into the
+# matching Shortbread layers and a stock Shortbread style draws them with no extra rules (the
+# frontend no longer adds a custom land-cover layer). Set LANDCOVER_URL="" to skip the merge.
 # (no colon, so an explicit LANDCOVER_URL="" disables the merge rather than re-defaulting)
+#
+# NOTE: this must point at a *v2* container. The container published at the URL below is still
+# v1 (single `landcover-vectors` layer) as of 2026-06-17 — merging it would leave `land`/
+# `water_polygons` empty at low zoom and the v2 frontend would render nothing there. Point this
+# at a v2 build (repo `v2` branch → `landcover.versatiles`) once one is published/built.
 export LANDCOVER_URL="${LANDCOVER_URL-https://download.versatiles.org/landcover-vectors.versatiles}"

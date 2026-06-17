@@ -38,11 +38,13 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --output="$TILES" \
   $PLANETILER_EXTRA_FLAGS
 
-# Convert to a brotli VersaTiles container. When LANDCOVER_URL is set (issue #1, option A),
-# merge the ESA WorldCover land cover into the same Shortbread output with the VPL
-# `from_merged_vector` operation: each output tile then carries all the Shortbread layers
-# *plus* the source's `landcover-vectors` layer (Shortbread schema is preserved). The land
-# cover container is read straight from its remote URL via `from_container`, so nothing is
+# Convert to a brotli VersaTiles container. When LANDCOVER_URL is set (issue #1), merge the
+# ESA WorldCover land cover into the same Shortbread output with the VPL `from_merged_vector`
+# operation. from_merged_vector combines features per layer name: with a landcover-vectors v2
+# container its `land`/`water_polygons` features (standard Shortbread `kind` values) fold into
+# the Shortbread `land`/`water_polygons` layers, so each output tile gains low-zoom land cover
+# within the existing Shortbread schema — a stock style draws it, no extra layer needed. The
+# land cover container is read straight from its remote URL via `from_container`, so nothing is
 # downloaded locally — versatiles range-reads it on demand. Set LANDCOVER_URL="" to skip it.
 if [ -n "${LANDCOVER_URL:-}" ]; then
   echo ">>> Merging Shortbread tiles + ESA WorldCover land cover into a brotli container (VPL from_merged_vector)"

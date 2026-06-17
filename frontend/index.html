@@ -41,28 +41,21 @@
     const LOCAL_TILES_URL = location.origin + '/tiles/shortbread/{z}/{x}/{y}';
     const START = { center: [9.0, 48.5], zoom: 4 };
 
-    // Low-zoom land cover (issue #1, option A): 02-generate.sh merges the ESA WorldCover
-    // `landcover-vectors` layer into the local Shortbread container (VPL from_merged_vector),
-    // so it rides along on the same local source as a normal source-layer. We add a fill
-    // layer for it to the right map only, so the comparison reads as "OSM only" (left) vs.
-    // "OSM + land cover" (right). The land cover data is native up to z8; the fill fades out
-    // by then as the OSM `land` layers begin to take over.
-    const LANDCOVER_SOURCE_LAYER = 'landcover-vectors';
-    // Colours taken from the VersaTiles "colorful" style itself (src/styles/colorful.ts),
-    // keyed by the source's `kind` values so the low-zoom land cover matches the OSM `land`
-    // layers it fades into. Each `kind` reuses the style colour for its closest `land-*` layer:
-    //   forest→wood, scrub→park/vegetation, grass→grass, farmland→agriculture,
-    //   urban→residential, bare→rock, glacier→glacier, water→water, wetland→wetland.
-    const LANDCOVER_COLORS = [
-      'forest', '#66AA44', 'scrub', '#D9D9A5', 'grass', '#D8E8C8',
-      'farmland', '#F0E7D1', 'urban', '#EAE6E133', 'bare', '#E0E4E5',
-      'glacier', '#FFFFFF', 'water', '#BEDDF3', 'wetland', '#D3E6DB',
-    ];
+    // Low-zoom land cover (issue #1): 02-generate.sh feature-merges the ESA WorldCover
+    // container (versatiles-org/landcover-vectors) into the local Shortbread container with
+    // VPL `from_merged_vector`. As of landcover-vectors v2 the land cover no longer lives in
+    // its own source-layer with custom `kind` values — it is written straight into
+    // Shortbread's *own* `land` and `water_polygons` layers using standard Shortbread `kind`
+    // values (forest, farmland, residential, sand, scrub, grassland, marsh, swamp, glacier,
+    // water), at the low zooms where OSM has no land yet. So a stock Shortbread style draws it
+    // automatically: the colorful style's land-*/water-* layers carry no minzoom and already
+    // have rules for every one of those kinds. No custom style layer and no colour table are
+    // needed any more — the only difference between the two maps is the merged-in source, so
+    // the comparison still reads as "OSM only" (left) vs. "OSM + land cover" (right).
     // ---------------------------------------------------------------------------------------
 
     async function buildLocalStyle() {
       const style = await (await fetch(STYLE_URL)).json();
-      let localSource = null;
       for (const key of Object.keys(style.sources || {})) {
         const src = style.sources[key];
         if (src.type === 'vector') {
@@ -70,33 +63,9 @@
           src.tiles = [LOCAL_TILES_URL];  // ...and point at the local source instead
           src.minzoom = src.minzoom ?? 0;
           src.maxzoom = 14;
-          localSource = localSource ?? key;
         }
       }
-      addLandcover(style, localSource);
       return style;
-    }
-
-    // Add a single fill layer for the merged-in `landcover-vectors` layer, just above the
-    // background so it fills the otherwise-blank land at low zoom while every OSM layer still
-    // draws on top. The data is native up to z8, so the fill fades out by then (the OSM `land`
-    // layers fade in around the same zooms); leaving it on past z8 would just pop off at z9
-    // where the source has no more land-cover features.
-    function addLandcover(style, sourceKey) {
-      if (!sourceKey) return;
-      const layer = {
-        id: 'landcover',
-        type: 'fill',
-        source: sourceKey,
-        'source-layer': LANDCOVER_SOURCE_LAYER,
-        paint: {
-          'fill-color': ['match', ['get', 'kind'], ...LANDCOVER_COLORS, '#cccccc'],
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 5, 1, 8, 0],
-          'fill-antialias': false,
-        },
-      };
-      // Insert right after the `background` layer (index 0) so it sits below everything else.
-      style.layers.splice(1, 0, layer);
     }
 
     (async function () {

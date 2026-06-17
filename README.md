@@ -50,8 +50,7 @@ it, the right map adds the ESA WorldCover land cover from
 
 `02-generate.sh` **merges** the land cover into the generated Shortbread container with the
 [VPL](https://github.com/versatiles-org/versatiles-rs) `from_merged_vector` operation, writing one
-brotli container — each tile then carries all the Shortbread layers *plus* a `landcover-vectors`
-layer (the Shortbread schema is preserved):
+brotli container:
 
 ```
 versatiles convert -c brotli \
@@ -60,12 +59,26 @@ versatiles convert -c brotli \
   shortbread.versatiles
 ```
 
+`from_merged_vector` combines features per layer name. As of **landcover-vectors
+[v2](https://github.com/versatiles-org/landcover-vectors/tree/v2)** the land cover no longer has
+its own `landcover-vectors` layer — it is written into Shortbread's *own* `land` and
+`water_polygons` layers using standard Shortbread `kind` values (`forest`, `farmland`,
+`residential`, `sand`, `scrub`, `grassland`, `marsh`, `swamp`, `glacier`, `water`), each emitted
+only *below* the zoom where OSM introduces it. So the merge folds the land cover straight into the
+matching Shortbread layers and **a stock Shortbread style draws it with no extra rules**:
+`frontend/index.html` just repoints the colorful style at the local tiles — its `land-*`/`water-*`
+layers carry no `minzoom` and already style every one of those kinds, so the merged-in land cover
+appears at low zoom automatically. (No custom land-cover layer or colour table is needed any more;
+the data's per-kind zoom cutoffs replace the old client-side fade-out.)
+
 The land cover container is read **straight from its remote URL** via `from_container`, so nothing
-is downloaded locally — `versatiles` range-reads the ~800 MB container on demand during the
-convert. `frontend/index.html` then styles the merged-in `landcover-vectors` layer as a single
-fill (coloured by the `kind` field with the official ESA WorldCover palette), sitting just above
-the background so every OSM layer still draws on top. The land cover is native up to z8, so the
-fill fades out by then as the OSM `land` layers fade in.
+is downloaded locally — `versatiles` range-reads the container on demand during the convert.
+
+> **Heads-up:** `LANDCOVER_URL` must point at a **v2** container. The container currently published
+> at `download.versatiles.org/landcover-vectors.versatiles` is still **v1** (a single
+> `landcover-vectors` layer, max zoom 8) as of 2026-06-17 — merging it leaves `land`/`water_polygons`
+> empty at low zoom, so the v2 frontend renders nothing there. Point `LANDCOVER_URL` at a v2 build
+> (the repo's `v2` branch produces `landcover.versatiles`) once one is published or built locally.
 
 Configure or disable it in `config.sh` (or via the environment): `LANDCOVER_URL` is the remote
 container — set `LANDCOVER_URL=""` to skip the merge and emit a plain Shortbread container.
