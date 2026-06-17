@@ -55,7 +55,7 @@ brotli container:
 ```
 versatiles convert -c brotli \
   '[,vpl](from_merged_vector [ from_container filename="shortbread.pmtiles", \
-                              from_container filename="https://download.versatiles.org/landcover-vectors.versatiles" ])' \
+                              from_container filename="sftp://u417480.your-storagebox.de/incoming/landcover.versatiles" ])' \
   shortbread.versatiles
 ```
 
@@ -74,11 +74,13 @@ the data's per-kind zoom cutoffs replace the old client-side fade-out.)
 The land cover container is read **straight from its remote URL** via `from_container`, so nothing
 is downloaded locally — `versatiles` range-reads the container on demand during the convert.
 
-> **Heads-up:** `LANDCOVER_URL` must point at a **v2** container. The container currently published
-> at `download.versatiles.org/landcover-vectors.versatiles` is still **v1** (a single
-> `landcover-vectors` layer, max zoom 8) as of 2026-06-17 — merging it leaves `land`/`water_polygons`
-> empty at low zoom, so the v2 frontend renders nothing there. Point `LANDCOVER_URL` at a v2 build
-> (the repo's `v2` branch produces `landcover.versatiles`) once one is published or built locally.
+> **Heads-up:** `LANDCOVER_URL` must point at a **v2** container. While v2 is still being tested it's
+> served from the storage box over SFTP
+> (`sftp://u417480.your-storagebox.de/incoming/landcover.versatiles`) — `versatiles` range-reads it
+> on demand just like an http(s) URL. The container published at
+> `download.versatiles.org/landcover-vectors.versatiles` is still **v1** (a single
+> `landcover-vectors` layer, max zoom 8); swap `LANDCOVER_URL` to
+> `https://download.versatiles.org/landcover.versatiles` once v2 is published there.
 
 Configure or disable it in `config.sh` (or via the environment): `LANDCOVER_URL` is the remote
 container — set `LANDCOVER_URL=""` to skip the merge and emit a plain Shortbread container.

@@ -41,8 +41,7 @@ export SOURCE_ID="${SOURCE_ID:-shortbread}"
 # frontend no longer adds a custom land-cover layer). Set LANDCOVER_URL="" to skip the merge.
 # (no colon, so an explicit LANDCOVER_URL="" disables the merge rather than re-defaulting)
 #
-# NOTE: this must point at a *v2* container. The container published at the URL below is still
-# v1 (single `landcover-vectors` layer) as of 2026-06-17 — merging it would leave `land`/
-# `water_polygons` empty at low zoom and the v2 frontend would render nothing there. Point this
-# at a v2 build (repo `v2` branch → `landcover.versatiles`) once one is published/built.
-export LANDCOVER_URL="${LANDCOVER_URL-https://download.versatiles.org/landcover-vectors.versatiles}"
+# This must point at a *v2* container. While v2 is still being tested it's served from the
+# storage box over SFTP (versatiles range-reads it on demand, same as an http(s) URL); swap
+# this for https://download.versatiles.org/landcover.versatiles once v2 is published there.
+export LANDCOVER_URL="${LANDCOVER_URL-sftp://u417480.your-storagebox.de/incoming/landcover.versatiles}"
