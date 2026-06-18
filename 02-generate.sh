@@ -29,6 +29,43 @@ mkdir -p "$DATA_DIR"
 PMTILES="${TILES:-$DATA_DIR/osm.pmtiles}"
 VERSATILES="${VERSATILES:-$DATA_DIR/osm.versatiles}"
 
+# For AREA=planet, pre-download the planet .osm.pbf over BitTorrent (fast) and feed it to
+# planetiler via --osm_path instead of letting planetiler HTTP-download it (slow). The other
+# sources (ocean water-polygons, natural earth) are still fetched by planetiler's --download.
+# planetiler caches downloads under $WORKDIR/data/sources, so we drop the planet pbf there too.
+SOURCES_DIR="$DATA_DIR/sources"
+OSM_PATH_ARG=""
+if [ "$AREA" = "planet" ] && [ "$USE_TORRENT" = "1" ]; then
+  if ! command -v aria2c >/dev/null; then
+    echo "aria2c not found — install it (./01-setup.sh) or set USE_TORRENT=0 to use planetiler's HTTP download." >&2
+    exit 1
+  fi
+  mkdir -p "$SOURCES_DIR"
+  if [ -z "$PLANET_DATE" ]; then
+    echo ">>> Resolving latest planet snapshot from $PLANET_PBF_BASE/"
+    PLANET_DATE="$(curl -fsSL "$PLANET_PBF_BASE/" \
+      | grep -oE 'planet-[0-9]{6}\.osm\.pbf' | grep -oE '[0-9]{6}' | sort | tail -n1)"
+  fi
+  if [ -z "$PLANET_DATE" ]; then
+    echo "Could not determine the latest planet date from $PLANET_PBF_BASE/ — set PLANET_DATE=YYMMDD." >&2
+    exit 1
+  fi
+  PLANET_PBF="$SOURCES_DIR/planet-$PLANET_DATE.osm.pbf"
+  if [ -f "$PLANET_PBF" ] && [ ! -f "$PLANET_PBF.aria2" ]; then
+    echo ">>> Reusing existing $PLANET_PBF (delete it to force a fresh download)"
+  else
+    echo ">>> Downloading planet-$PLANET_DATE.osm.pbf via BitTorrent (aria2c)"
+    TORRENT="$SOURCES_DIR/planet-$PLANET_DATE.osm.pbf.torrent"
+    curl -fsSL "$PLANET_PBF_BASE/planet-$PLANET_DATE.osm.pbf.torrent" -o "$TORRENT"
+    # --seed-time=0: stop seeding the moment the download finishes. --continue + the .aria2
+    # control file make this resumable. falloc preallocates the ~80 GB file quickly on
+    # ext4/xfs/btrfs (the Debian build host); switch to none if your filesystem lacks fallocate.
+    aria2c --dir="$SOURCES_DIR" --seed-time=0 --continue=true \
+      --file-allocation=falloc --summary-interval=30 "$TORRENT"
+  fi
+  OSM_PATH_ARG="--osm_path=$PLANET_PBF"
+fi
+
 echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES, experiments: $EXPERIMENTS)"
 # Run from WORKDIR so planetiler caches downloads under $WORKDIR/data/sources.
 cd "$WORKDIR"
@@ -39,6 +76,7 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --force \
   --name_languages="$LANGUAGES" \
   --shortbread_experiments="$EXPERIMENTS" \
+  $OSM_PATH_ARG \
   --output="$PMTILES" \
   $PLANETILER_EXTRA_FLAGS
 

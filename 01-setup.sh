@@ -11,7 +11,7 @@ echo ">>> Installing system packages"
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -y
 sudo apt-get install -y --no-install-recommends \
-  ca-certificates curl wget git unzip gnupg apt-transport-https jq
+  ca-certificates curl wget git unzip gnupg apt-transport-https jq aria2
 
 echo ">>> Installing Temurin (Eclipse) JDK 21"
 if ! command -v java >/dev/null || ! java -version 2>&1 | grep -q '"21'; then

@@ -32,6 +32,17 @@ export EXPERIMENTS="${EXPERIMENTS:-all}"
 # JVM heap. Planetiler keeps most data off-heap, so this can stay modest even for the planet.
 export JAVA_OPTS="${JAVA_OPTS:--Xmx20g}"
 
+# --- planet download via torrent ---
+# planetiler's built-in HTTP download of the full planet from planet.osm.org is slow. When
+# USE_TORRENT=1 (the default) and AREA=planet, 02-generate.sh instead fetches the planet
+# .osm.pbf over BitTorrent with aria2c and hands the local file to planetiler via --osm_path.
+# Set USE_TORRENT=0 to force planetiler's built-in HTTP download. Ignored for non-planet areas
+# (those come from Geofabrik over HTTP, which is fast enough). PLANET_DATE pins a specific
+# YYMMDD snapshot; leave empty to auto-pick the newest one listed at $PLANET_PBF_BASE/.
+export USE_TORRENT="${USE_TORRENT:-1}"
+export PLANET_PBF_BASE="${PLANET_PBF_BASE:-https://planet.osm.org/pbf}"
+export PLANET_DATE="${PLANET_DATE:-}"
+
 # Extra planetiler flags. For a planet build on a machine without huge RAM, memory-mapped
 # storage avoids OOM (at the cost of needing a fast SSD and more disk). Remove on big-RAM hosts.
 # See the repo's PLANET.md for tuning guidance.
