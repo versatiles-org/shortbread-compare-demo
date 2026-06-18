@@ -29,7 +29,7 @@ mkdir -p "$DATA_DIR"
 PMTILES="${TILES:-$DATA_DIR/osm.pmtiles}"
 VERSATILES="${VERSATILES:-$DATA_DIR/osm.versatiles}"
 
-echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES)"
+echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES, experiments: $EXPERIMENTS)"
 # Run from WORKDIR so planetiler caches downloads under $WORKDIR/data/sources.
 cd "$WORKDIR"
 # shellcheck disable=SC2086
@@ -38,6 +38,7 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --download \
   --force \
   --name_languages="$LANGUAGES" \
+  --shortbread_experiments="$EXPERIMENTS" \
   --output="$PMTILES" \
   $PLANETILER_EXTRA_FLAGS
 

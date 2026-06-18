@@ -18,6 +18,17 @@ export FRONTEND_DIR="${FRONTEND_DIR:-$WORKDIR/frontend}"
 export AREA="${AREA:-planet}"
 export LANGUAGES="${LANGUAGES:-en,fr,es,de,ar,el,it,nl,pl,pt,uk}"
 
+# Beyond-spec Shortbread experiments (planetiler --shortbread_experiments). Opt-in features
+# that go past the 1.0/1.1 spec; default is "all" to exercise everything. Set to "none" for
+# strict-spec output, or a comma-separated subset of:
+#   building_heights  — 3D building height/min_height attributes on the buildings layer
+#   building_parts    — Simple-3D-Buildings building:part polygons + hide_3d flag (implies building_heights)
+#   locale_names      — geofenced name_<lang> fallback inside matching countries (adds Natural Earth admin_0 source)
+#   island_labels     — place_labels for islands mapped as polygons (not just nodes)
+#   address_details   — addr:unit and addr:block attributes on the addresses layer
+#   bridge_names      — name attribute on bridge polygons
+export EXPERIMENTS="${EXPERIMENTS:-all}"
+
 # JVM heap. Planetiler keeps most data off-heap, so this can stay modest even for the planet.
 export JAVA_OPTS="${JAVA_OPTS:--Xmx20g}"
 
