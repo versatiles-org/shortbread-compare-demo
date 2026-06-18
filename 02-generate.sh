@@ -26,7 +26,8 @@ mkdir -p "$DATA_DIR"
 # file, so the `versatiles convert` read in 04-merge.sh avoids the random-access SQLite B-tree
 # overhead that makes reading MBTiles slow (planetiler picks the format from the file
 # extension). To override the location — e.g. a ramdisk for small test areas — set TILES.
-TILES="${TILES:-$DATA_DIR/shortbread.pmtiles}"
+PMTILES="${TILES:-$DATA_DIR/osm.pmtiles}"
+VERSATILES="${VERSATILES:-$DATA_DIR/osm.versatiles}"
 
 echo ">>> Generating Shortbread 1.1 tiles for area='$AREA' (languages: $LANGUAGES)"
 # Run from WORKDIR so planetiler caches downloads under $WORKDIR/data/sources.
@@ -37,9 +38,12 @@ java $JAVA_OPTS -jar "$JAR" shortbread-1.1 \
   --download \
   --force \
   --name_languages="$LANGUAGES" \
-  --output="$TILES" \
+  --output="$PMTILES" \
   $PLANETILER_EXTRA_FLAGS
 
+versatiles convert -c brotli "$PMTILES" "$VERSATILES"
+
 echo ">>> Done:"
-ls -lh "$TILES"
+ls -lh "$PMTILES"
+ls -lh "$VERSATILES"
 echo ">>> Next: ./03-preview.sh (quick realtime-merged preview) or ./04-merge.sh (build the final container)"
