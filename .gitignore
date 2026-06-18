@@ -1,0 +1,5 @@
+# Build artifacts (cloned planetiler repo, downloaded frontend, generated tiles).
+# WORKDIR in config.sh defaults here.
+/data/
+
+.DS_Store

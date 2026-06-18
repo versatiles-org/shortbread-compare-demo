@@ -4,7 +4,10 @@
 # --- repo / build ---
 export REPO_URL="${REPO_URL:-https://github.com/versatiles-org/planetiler.git}"
 export BRANCH="${BRANCH:-feature/shortbread-java-profile}"
-export WORKDIR="${WORKDIR:-$HOME/shortbread-demo}"
+# All build artifacts live in a gitignored data/ folder inside this repo by default.
+# ${BASH_SOURCE[0]} resolves to config.sh regardless of which NN-*.sh step sourced it.
+CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export WORKDIR="${WORKDIR:-$CONFIG_DIR/data}"
 export REPO_DIR="${REPO_DIR:-$WORKDIR/planetiler}"
 export DATA_DIR="${DATA_DIR:-$WORKDIR/data}"
 export FRONTEND_DIR="${FRONTEND_DIR:-$WORKDIR/frontend}"
