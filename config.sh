@@ -71,7 +71,7 @@ export SOURCE_ID="${SOURCE_ID:-shortbread}"
 # http(s) URL. Swap this for https://download.versatiles.org/landcover.versatiles once v2 is
 # published there. SFTP auth uses your SSH key (agent / ~/.ssh/config / default keys) or
 # VERSATILES_SSH_IDENTITY; embed a password as sftp://user:pass@host if you must.
-export LANDCOVER_URL="${LANDCOVER_URL-sftp://u417480@u417480.your-storagebox.de:23/home/incoming/landcover.versatiles}"
+export LANDCOVER_URL="${LANDCOVER_URL-sftp://u417480@u417480.your-storagebox.de:23/home/download/landcover-vectors/landcover-vectors.versatiles}"
 
 # Remote Shortbread tiles used by the *preview* step (03-preview.sh) only. The preview serves a
 # realtime VPL merge of these remote Shortbread tiles + the remote land cover above, so you can
