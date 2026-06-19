@@ -76,7 +76,7 @@ export LANDCOVER_URL="${LANDCOVER_URL-sftp://u417480@u417480.your-storagebox.de:
 # Remote Shortbread tiles used by the *preview* step (03-preview.sh) only. The preview serves a
 # realtime VPL merge of these remote Shortbread tiles + the remote land cover above, so you can
 # eyeball the merged result over SFTP without first building the local container (04-merge.sh).
-export REMOTE_SHORTBREAD_URL="${REMOTE_SHORTBREAD_URL-sftp://u417480@u417480.your-storagebox.de:23/home/incoming/shortbread.pmtiles}"
+export REMOTE_SHORTBREAD_URL="${REMOTE_SHORTBREAD_URL-sftp://u417480@u417480.your-storagebox.de:23/home/download/osm/osm.20260608.versatiles}"
 
 # Download (once) the standard versatiles-frontend tarball into $WORKDIR, reusing any existing
 # copy, and set FRONTEND_TAR to its path. The preview (03) and serve (05) steps both layer the
