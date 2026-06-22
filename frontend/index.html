@@ -3,13 +3,11 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Shortbread comparison — tilemaker vs. native planetiler</title>
+  <title>Shortbread comparison — NDR vs. VersaTiles</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link href="https://tiles.versatiles.org/assets/lib/maplibre-gl/maplibre-gl.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-compare@0.5.0/dist/maplibre-gl-compare.css" rel="stylesheet" />
   <script src="https://tiles.versatiles.org/assets/lib/maplibre-gl/maplibre-gl.js"></script>
-  <!-- maplibre-gl-compare's UMD build attaches itself as maplibregl.Compare, so it must load
-       after maplibre-gl above. -->
   <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-compare@0.5.0/dist/maplibre-gl-compare.js"></script>
   <style>
     html, body { margin: 0; height: 100%; }
@@ -28,37 +26,13 @@
   <div id="compare">
     <div id="before"></div>
     <div id="after"></div>
-    <div class="badge" id="badge-left">Shortbread &middot; tilemaker (tiles.versatiles.org)</div>
-    <div class="badge" id="badge-right">Shortbread &middot; native planetiler integration &plus; ESA WorldCover land cover</div>
+    <div class="badge" id="badge-left">Shortbread</div>
+    <div class="badge" id="badge-right">Shortbread &middot; ESA WorldCover land cover</div>
   </div>
 
   <script>
-    // ----- configuration -------------------------------------------------------------------
-    // The "colorful" VersaTiles style (built for the Shortbread schema). The left map uses it
-    // as-is (the current tilemaker-generated tiles on tiles.versatiles.org); the right map
-    // reuses it but with the source rewritten to the locally served planetiler tiles.
     const STYLE_URL = 'https://tiles.versatiles.org/assets/styles/colorful/style.json';
-    const LOCAL_TILES_URL = location.origin + '/tiles/shortbread/{z}/{x}/{y}';
     const START = { center: [9.0, 48.5], zoom: 4 };
-
-    // Low-zoom land cover (issue #1): 04-merge.sh feature-merges the ESA WorldCover
-    // container (versatiles-org/landcover-vectors) into the local Shortbread container with
-    // VPL `from_merged_vector`. As of landcover-vectors v2 the land cover no longer lives in
-    // its own source-layer with custom `kind` values — it is written straight into
-    // Shortbread's *own* `land` and `water_polygons` layers using standard Shortbread `kind`
-    // values (forest, farmland, residential, sand, scrub, grassland, marsh, swamp, glacier,
-    // water), at the low zooms where OSM has no land yet. So no custom style layer or colour
-    // table is needed: the colorful style's existing land-*/water-* layers already match every
-    // one of those kinds. The only difference between the two maps is the merged-in source, so
-    // the comparison reads as "OSM only" (left) vs. "OSM + land cover" (right).
-    //
-    // BUT the colorful style ramps several of those layers' `fill-opacity` to 0 at low zoom
-    // (see versatiles-style/src/styles/colorful.ts) — they're tuned for sparse high-zoom OSM
-    // data, so the merged-in land cover would be invisible exactly where it exists. For the
-    // right (local) map we override `fill-opacity` on just those layers, holding them visible
-    // across the zooms each kind covers and meeting the style's original high-zoom value so the
-    // two maps still match where OSM takes over. Layers with no opacity ramp (land-sand,
-    // land-wetland, land-glacier) already show at low zoom and need no fix.
     const LANDCOVER_OPACITY_FIXES = {
       'land-forest':      0.1, // forest z0-6 visible, then style's subtle 0.1
       'land-agriculture': 1.0, // farmland z0-9
@@ -69,33 +43,26 @@
     };
     // ---------------------------------------------------------------------------------------
 
-    async function buildLocalStyle() {
+    async function buildStyle(applyLandcoverFixes = false) {
       const style = await (await fetch(STYLE_URL)).json();
-      for (const key of Object.keys(style.sources || {})) {
-        const src = style.sources[key];
-        if (src.type === 'vector') {
-          delete src.url;                 // drop the TileJSON reference to tiles.versatiles.org
-          src.tiles = [LOCAL_TILES_URL];  // ...and point at the local source instead
-          src.minzoom = src.minzoom ?? 0;
-          src.maxzoom = 14;
-        }
-      }
-      // Make the merged-in land cover visible at low zoom (see note above).
-      for (const layer of style.layers || []) {
-        if (layer.id in LANDCOVER_OPACITY_FIXES) {
-          (layer.paint ??= {})['fill-opacity'] = LANDCOVER_OPACITY_FIXES[layer.id];
+      if (applyLandcoverFixes) {
+        // Make the merged-in land cover visible at low zoom (see note above).
+        for (const layer of style.layers || []) {
+          if (layer.id in LANDCOVER_OPACITY_FIXES) {
+            (layer.paint ??= {})['fill-opacity'] = LANDCOVER_OPACITY_FIXES[layer.id];
+          }
         }
       }
       return style;
     }
 
     (async function () {
-      // Only the left map owns the URL hash (#zoom/lat/lng); maplibre-gl-compare keeps the
-      // right map in sync, so a single writer avoids two maps fighting over the hash. The hash
-      // is parsed synchronously in the constructor, so getCenter()/getZoom() below already
-      // reflect a position restored from the URL.
+      const [beforeStyle, afterStyle] = await Promise.all([
+        buildStyle(),
+        buildStyle(true),
+      ]);
       const before = new maplibregl.Map({
-        container: 'before', style: STYLE_URL, hash: true,
+        container: 'before', style: beforeStyle, hash: true,
         center: START.center, zoom: START.zoom, attributionControl: false,
       });
       const initial = {
@@ -103,7 +70,7 @@
         bearing: before.getBearing(), pitch: before.getPitch(),
       };
       const after = new maplibregl.Map({
-        container: 'after', style: await buildLocalStyle(), ...initial, attributionControl: false,
+        container: 'after', style: afterStyle, ...initial, attributionControl: false,
       });
       before.addControl(new maplibregl.AttributionControl({ compact: true }));
 
